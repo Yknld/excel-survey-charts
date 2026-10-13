@@ -75,8 +75,10 @@ function main(workbook: ExcelScript.Workbook) {
         series.getFormat().getFill().setSolidColor(colours[0]);
       }
       const labels = series.getDataLabels();
-      labels.setShowValue(block.kind !== "pie");
-      labels.setShowPercentage(block.kind === "pie");
+      // All series already contain proportions. Ordinary value labels with a
+      // percentage number format work for both pies and bars. Do not call
+      // setShowPercentage: Excel rejects it for some chart objects, even false.
+      labels.setShowValue(true);
       labels.setShowCategoryName(false);
       labels.setShowSeriesName(false);
       labels.setLinkNumberFormat(false);

@@ -49,7 +49,7 @@ class Series {
   delete(){this.chart.series=this.chart.series.filter(s=>s!==this);}
   setValues(r){this.values=r;} setXAxisValues(r){this.categories=r;}
   getFormat(){return format();} setVaryByCategories(){}
-  getDataLabels(){return {setShowValue(){},setShowPercentage(){},setShowCategoryName(){},setShowSeriesName(){},setLinkNumberFormat(){},setNumberFormat(){},setPosition(){}};}
+  getDataLabels(){return {setShowValue:v=>this.showValue=v,setShowPercentage(){throw Error('Percentage-label API is not permitted for this chart object');},setShowCategoryName(){},setShowSeriesName(){},setLinkNumberFormat(){},setNumberFormat:v=>this.labelFormat=v,setPosition(){}};}
 }
 class Chart {
   constructor(type){this.type=type;this.series=[new Series(this,'default')];this.axis={setMinimum:v=>this.min=v,setMaximum:v=>this.max=v,setNumberFormat(){},setReversePlotOrder(){}};}
@@ -93,7 +93,7 @@ test('invalid data fails before creating a sheet and identifies the row',()=>{
 test('all four chart types execute; no overlap; valid 0–100% axes',()=>{
  const data=grid();data.push(['Q1 — Extent','','',''],['Category','Institutions','Base (n)','Year'],...['Great','Moderate','Small','None','N/A'].map(x=>[x,20,100,0.2]),['','','',''],['Q2 — Processes','','',''],['Category','Institutions','Base (n)','Year'],['Recruitment',80,100,.8],['Retention',70,100,.7],['','','',''],['Q5 — Areas','','',''],['Category','Institutions','Base (n)','Year'],['Employment',50,100,.5],['Education',60,100,.6]);
  const book=workbook(data);context.main(book);assert.deepEqual(book.active.charts.map(c=>c.type),['pie','stacked','column','bar']);
- book.active.charts.forEach((c,i)=>{if(i)assert.ok(c.top>=book.active.charts[i-1].top+book.active.charts[i-1].height);if(c.type!=='pie'){assert.equal(c.min,0);assert.equal(c.max,1);}});
+  book.active.charts.forEach((c,i)=>{if(i)assert.ok(c.top>=book.active.charts[i-1].top+book.active.charts[i-1].height);if(c.type!=='pie'){assert.equal(c.min,0);assert.equal(c.max,1);}if(c.type!=='stacked'){assert.equal(c.series[0].showValue,true);assert.equal(c.series[0].labelFormat,'0.0%');}});
  assert.equal(book.active.charts[1].series.length,5);
 });
 // Optional local real-data validation. The supplied file is never published.
