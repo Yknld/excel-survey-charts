@@ -18,7 +18,9 @@ Each question block must have its title immediately above a four-column header r
 | Category / Catégorie | Institutions | Base (n) | 2025–2026 |
 |---|---:|---:|---:|
 
-Answer rows follow the header. Counts, bases and percentages must be Excel numbers, with percentages stored as proportions (for example, `0.75` formatted as `75%`). Blank rows or rows without a numeric base end a block. Multiple blocks can sit side by side.
+Answer rows follow the header. Counts and bases can be numbers or text numbers. Percentages can be numeric proportions (for example, `0.75` formatted as `75%`) or pasted text such as `75%`, `43.5%`, `43,5 %`, or `0,435`. Common non-breaking spaces are supported. Blanks are not treated as zero. Blank rows or rows with a blank base end a block. Multiple blocks can sit side by side.
+
+The script checks percentages against counts and bases before creating charts. It creates formula-linked numeric helper cells in columns AA–AB of the new chart sheet, calculating exact proportions from counts and bases. Keep those helper cells: they let charts work with text-formatted source numbers and update when source counts change. The source sheet is not modified. The helper formulas do not repeat the initial validation after later edits; rerun the script to validate changed data.
 
 The script is tailored to the Q1–Q18 survey layout and currently labels charts **2025–2026**. It uses the existing analysis figures and does not recalculate eligibility or resolve questionnaire routing.
 
@@ -33,6 +35,18 @@ Charts stay linked to source cells in the same workbook. Titles and series names
 
 ## Validation and scope
 
-Table detection and source ranges were checked locally against a 33-table layout, including French headers and shifted cell positions. The script has not yet been tested in the target Excel cloud workbook.
+The script passes a TypeScript check against Microsoft's Office Scripts release API declarations. Local tests cover number parsing, French decimal commas and spaces, rejection of invalid data before sheet creation, all four chart types, source links, repeat runs, source preservation, and all 33 tables in the original layout. Workbook calls are tested with a simulated workbook; this is not a live Excel runtime test. The corrected script still needs a run in the target Excel cloud workbook.
+
+### Run the local tests
+
+Install Node.js and the development dependency, then download Microsoft's declarations and run:
+
+```sh
+npm install
+curl -fL https://raw.githubusercontent.com/OfficeDev/office-scripts-docs-reference/main/generate-docs/api-extractor-inputs-excelscript-release/excelscript.d.ts -o excel.d.ts
+npm test
+```
+
+The tests use synthetic data. An optional local analysis JSON can be supplied to `node test.cjs /path/to/analysis_tables_data.json`; no real response data is included in this repository.
 
 Only the script and these instructions are published here. No survey responses or analysis datasets are included.

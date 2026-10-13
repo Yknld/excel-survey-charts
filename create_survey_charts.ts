@@ -31,10 +31,25 @@ function main(workbook: ExcelScript.Workbook) {
   output.getRange("AA1").setValue("Institutions");
   const colours = ["#226481", "#69A8BD", "#E9C46A", "#D47B55", "#CBCFD2"];
   let top = 20;
+  let helperRow = 3;
   for (let i = 0; i < blocks.length; i++) {
     const block = blocks[i];
-    const categories = source.getRangeByIndexes(block.row, block.column, block.labels.length, 1);
-    const percentages = source.getRangeByIndexes(block.row, block.column + 3, block.labels.length, 1);
+    // Numeric, formula-linked helper cells also work when pasted source cells
+    // contain text such as "35", "102", or "34,3 %". Source cells stay intact.
+    const categories = output.getRangeByIndexes(helperRow, 26, block.labels.length, 1);
+    const percentages = output.getRangeByIndexes(helperRow, 27, block.labels.length, 1);
+    const categoryFormulas: string[][] = [];
+    const percentageFormulas: string[][] = [];
+    for (let j = 0; j < block.labels.length; j++) {
+      const labelAddress = source.getRangeByIndexes(block.row + j, block.column, 1, 1).getAddress();
+      const countAddress = source.getRangeByIndexes(block.row + j, block.column + 1, 1, 1).getAddress();
+      const baseAddress = source.getRangeByIndexes(block.row + j, block.column + 2, 1, 1).getAddress();
+      categoryFormulas.push(["=" + labelAddress]);
+      percentageFormulas.push(["=" + numericFormula(countAddress) + "/" + numericFormula(baseAddress)]);
+    }
+    categories.setFormulas(categoryFormulas);
+    percentages.setFormulas(percentageFormulas);
+    percentages.setNumberFormat("0.0%");
     let type = ExcelScript.ChartType.barClustered;
     if (block.kind === "pie") type = ExcelScript.ChartType.pie;
     if (block.kind === "stacked") type = ExcelScript.ChartType.barStacked100;
@@ -47,7 +62,7 @@ function main(workbook: ExcelScript.Workbook) {
       for (let j = 0; j < block.labels.length; j++) {
         const series = chart.addChartSeries(block.labels[j]);
         series.setXAxisValues(output.getRange("AA1"));
-        series.setValues(source.getRangeByIndexes(block.row + j, block.column + 3, 1, 1));
+        series.setValues(output.getRangeByIndexes(helperRow + j, 27, 1, 1));
         series.getFormat().getFill().setSolidColor(colours[j % colours.length]);
       }
     } else {
@@ -78,8 +93,8 @@ function main(workbook: ExcelScript.Workbook) {
     legend.setPosition(block.kind === "pie" ? ExcelScript.ChartLegendPosition.right : ExcelScript.ChartLegendPosition.bottom);
     if (block.kind !== "pie") {
       const axis = chart.getAxes().getValueAxis();
-      axis.setMinimumScale(0);
-      axis.setMaximumScale(1);
+      axis.setMinimum(0);
+      axis.setMaximum(1);
       axis.setNumberFormat("0%");
       if (block.kind !== "column") chart.getAxes().getCategoryAxis().setReversePlotOrder(true);
     }
@@ -89,6 +104,7 @@ function main(workbook: ExcelScript.Workbook) {
     chart.setWidth(900);
     chart.setHeight(height);
     top += height + 30;
+    helperRow += block.labels.length + 2;
   }
   output.activate();
   console.log("Created " + blocks.length + " editable charts on '" + name + "', linked to '" + source.getName() + "'. Original sheets were not changed.");
@@ -96,6 +112,24 @@ function main(workbook: ExcelScript.Workbook) {
 
 function normalize(value: string): string {
   return value.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+function numericFormula(address: string): string {
+  // Parse decimal commas and common spaces explicitly, irrespective of locale.
+  return 'NUMBERVALUE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(SUBSTITUTE(' + address + '," ",""),CHAR(160),""),UNICHAR(8239),""),",","."),".",",")';
+}
+
+function readNumber(value: string | number | boolean, percentage: boolean = false): number {
+  if (typeof value === "number") return value;
+  if (typeof value !== "string") return NaN;
+  let text = value.replace(/[\s\u00a0\u202f]/g, "");
+  const hasPercent = text.endsWith("%");
+  if (hasPercent) text = text.slice(0, -1);
+  if (hasPercent && !percentage) return NaN;
+  // Do not guess ambiguous thousands separators or turn blanks into zero.
+  if (!/^[+-]?\d+(?:[.,]\d+)?$/.test(text)) return NaN;
+  const number = Number(text.replace(",", "."));
+  return hasPercent ? number / 100 : number;
 }
 
 function findQuestions(values: (string | number | boolean)[][], rowOffset: number, colOffset: number): QuestionBlock[] {
@@ -120,13 +154,14 @@ function findQuestions(values: (string | number | boolean)[][], rowOffset: numbe
       const cap = (question === 9 || question === 11) && !isOverall ? 100 : limit;
       for (let k = r + 1; k < values.length && labels.length < cap; k++) {
         const label = String(values[k][c]).trim();
-        const count = values[k][c + 1];
-        const n = values[k][c + 2];
-        const pct = values[k][c + 3];
-        if (!label || n === "" || typeof n !== "number") break;
+        const rawBase = values[k][c + 2];
+        if (!label || String(rawBase).trim() === "") break;
         if (/^any\s/i.test(label)) break;
-        if (n <= 0 || typeof count !== "number" || count < 0 || count > n || typeof pct !== "number" || pct < 0 || pct > 1) {
-          throw new Error("Invalid count, base or percentage in " + title + ". Percentages must be numeric Excel percentages.");
+        const count = readNumber(values[k][c + 1]);
+        const n = readNumber(rawBase);
+        const pct = readNumber(values[k][c + 3], true);
+        if (!Number.isFinite(n) || !Number.isInteger(n) || n <= 0 || !Number.isFinite(count) || !Number.isInteger(count) || count < 0 || count > n || !Number.isFinite(pct) || pct < 0 || pct > 1) {
+          throw new Error("Invalid value in " + title + ", source row " + (rowOffset + k + 1) + ", " + label + ": count=" + String(values[k][c + 1]) + "; base=" + String(rawBase) + "; percentage=" + String(values[k][c + 3]) + ". Expected whole-number counts/base and a percentage such as 34.3% or 34,3 %.");
         }
         if (Math.abs(pct - count / n) > 0.00051) {
           throw new Error("Count/base does not match the percentage in " + title + ": " + label);
@@ -134,7 +169,7 @@ function findQuestions(values: (string | number | boolean)[][], rowOffset: numbe
         if (base !== 0 && base !== n) throw new Error("Inconsistent base within " + title);
         base = n;
         labels.push(label);
-        percentages.push(pct);
+        percentages.push(count / n);
       }
       if (!labels.length) continue;
       const cleaned = labels.map(label => normalize(label));
