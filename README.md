@@ -49,4 +49,14 @@ npm test
 
 The tests use synthetic data. An optional local analysis JSON can be supplied to `node test.cjs /path/to/analysis_tables_data.json`; no real response data is included in this repository.
 
-Only the script and these instructions are published here. No survey responses or analysis datasets are included.
+Individual survey responses are not published here. The analysis folder contains aggregate theme counts only.
+
+## Q19–Q20 qualitative analysis, 2025–2026
+
+[View the theme-statistics spreadsheet](analysis/2025-2026/Q19_Q20_theme_statistics.csv). GitHub displays this CSV as a table; download it to open in Excel.
+
+This is the original survey analysis, separate from the PCH team-level dataset. It covers 481 nonempty entries from 99 institutions: Q19 has 262 entries from 96 institutions; Q20 has 219 entries from 97 institutions.
+
+The table applies theme bank version 1.1 (44 categories). Each institution counts once per category. Bases include nonempty answers, including no-example and objective-only responses; blanks are excluded. Multiple categories may apply, so percentages do not sum to 100%. The percentage column uses 0–100 values rounded to one decimal.
+
+These are provisional AI-assisted classifications with exact-source excerpt checks and semantic spot-checks, not independently verified outcomes or time trends. Thirty-four points did not fit the established bank and remain excluded from its category counts pending taxonomy review. The original Canadian Heritage Q19/Q20 fields are blank; its separate consolidated team responses are not included in this table.
