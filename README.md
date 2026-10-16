@@ -51,6 +51,15 @@ The tests use synthetic data. An optional local analysis JSON can be supplied to
 
 Individual survey responses are not published here.
 
+## Q19 supported and funded initiatives
+
+The [Q19 initiative tables](analysis/2025-2026/q19-supported-initiatives/) combine the 2025–2026 original survey responses with the separate PCH team submissions:
+
+- `Initiatives.csv` contains 267 reported initiative mentions.
+- `Financial_facts.csv` contains 30 monetary statements linked to those mentions.
+
+These are provisional AI-assisted extractions. Each row includes a source excerpt for review. Initiative mentions are not confirmed unique projects, and financial records should not be summed because program budgets, project awards, reporting periods, and organizational submissions can overlap.
+
 ## Q19–Q20 dataset history
 
 The Q19–Q20 theme-statistics dataset has been removed from the current version. Its previous version remains available in [Git history](https://github.com/Yknld/excel-survey-charts/commits/main/analysis/2025-2026/Q19_Q20_theme_statistics.csv).
