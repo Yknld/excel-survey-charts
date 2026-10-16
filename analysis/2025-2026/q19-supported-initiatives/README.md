@@ -1,5 +1,9 @@
 # Q19 supported and funded initiatives — provisional extraction
 
+## Report-ready workbook
+
+[Download the combined Excel workbook](Q19_report_examples_2025-2026.xlsx). Its first sheet contains 50 concrete examples selected for a 5–10 page report table. Each row brings together the department, PCH unit where applicable, program, project, recipient, funder, amount, period, communities, activities, participants, reported results, a paste-ready summary and the complete source excerpt. The workbook also retains all 267 initiative mentions and a filtered review list.
+
 Processed 320 original answer entries; 167 contain extracted support records.
 Extracted 267 initiative mentions and 30 reported monetary facts.
 API cost (uncached input pricing): US$1.3931.
